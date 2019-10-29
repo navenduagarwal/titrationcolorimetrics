@@ -37,9 +37,8 @@ COLOR_AR_CONSEC_FRAMES = 20
 # indicate if the alarm is going off
 CONSECUTIVE_FRAME_COUNTER = 0
 ALARM_ON = False
-
+GIF_FRAMES = []
 cap = cv2.VideoCapture('raw_media/titration.wmv')
-
 
 if cap.isOpened():
     Width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -47,12 +46,14 @@ if cap.isOpened():
     FPS = cap.get(cv2.CAP_PROP_FPS)
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    print(total_frames)
-    print(Width, Height)
+    print("Total # of frames {}".format(total_frames))
+    print("Width {}, Height {}".format(Width, Height))
     ret1, img1 = cap.read()
     if ret1:
         START_AVG_CHANNEL_COLOR = clip_color_avg(img1)
-        print(START_AVG_CHANNEL_COLOR)
+        print(
+            "Channel Colors Avg Value  B:{}, G:{}, R:{}".format(START_AVG_CHANNEL_COLOR[0], START_AVG_CHANNEL_COLOR[1],
+                                                                START_AVG_CHANNEL_COLOR[2]))
         output = cv2.VideoWriter('output/titration_output.avi', fourcc, FPS, (int(Width), int(Height)), True)
         number_frame = 1
         raw_data = {'frames': [], 'avg_blue': [], 'avg_green': [], 'avg_red': []}
@@ -78,13 +79,13 @@ if cap.isOpened():
                             t.daemon = True
                             t.start()
                         # draw an alarm on the frame
-                        cv2.putText(img, "COLOR CHANGED!", (50, 30),
+                        cv2.putText(img, "PROCESS COMPLETE!", (50, 50),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
                 else:
                     CONSECUTIVE_FRAME_COUNTER = 0
                     ALARM_ON = False
                     # draw an alarm on the frame
-                    cv2.putText(img, "PROCESS ONGOING", (50, 30),
+                    cv2.putText(img, "PROCESS ONGOING", (50, 50),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
                 raw_data['frames'].append(number_frame)
@@ -94,7 +95,7 @@ if cap.isOpened():
                 cv2.putText(img, "Frame {}/{}".format(number_frame, total_frames),
                             (50, 300), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1, cv2.LINE_AA)
                 cv2.putText(img, "SPARSHIK",
-                            (50, 50), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1, cv2.LINE_AA)
+                            (50, 30), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1, cv2.LINE_AA)
                 cv2.putText(img,
                             'B: {}'.format(int(raw_data['avg_blue'][number_frame - 1])), (550, 50),
                             cv2.FONT_HERSHEY_COMPLEX,
@@ -110,7 +111,9 @@ if cap.isOpened():
                               color=(255, 255, 255), thickness=1)
                 number_frame += 1
                 cv2.imshow(winname='Titration Color Analysis', mat=img)
-                output.write(img)
+                # save every 500 frame
+                if number_frame % 200 == 0:
+                    output.write(img)
                 # Press Q on keyboard to  exit
                 if cv2.waitKey(25) & 0xFF == ord('q'):
                     break
